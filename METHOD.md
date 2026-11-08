@@ -195,7 +195,7 @@ manifest. Both readers check the uncompressed bytes before parsing. Export
 forwards that archive without recompression, making its four browser files
 byte-exact. Fresh fits and cross-language floating results use finite
 `2e-10 * (1 + abs(reference))` tolerance with exact structure/discrete values;
-bitwise floating portability is not claimed. Eight modules and six commands run
+bitwise floating portability is not claimed. Nine modules and seven commands run
 from the installed wheel outside the source tree. No dependency or hidden
 network service is required by the model or browser.
 
@@ -244,3 +244,77 @@ paper. Score orientation and message-inclusion conventions differ between
 sources. The formulas above fix this project's convention rather than silently
 merging incompatible array layouts. The implementation, synthetic fixture,
 tests, browser and prose here are original; cited theory is standard.
+
+
+## v0.2: exact position-wise label-event conditioning
+
+For fixed observations x and unchanged finite scores s(x,y), let allowed[t]
+be a subset of the label indices at position t. The event E is the Cartesian
+product of those subsets. Define
+
+```text
+Z_E(x) = sum_{y in E} exp(s(x,y))
+log P(E | x) = log Z_E(x) - log Z(x)
+P(y | x,E) = exp(s(x,y)) / Z_E(x), for y in E, and zero otherwise.
+d log P(E | x) / d theta = E[features | x,E] - E[features | x]
+```
+
+The masked log-space recurrence excludes forbidden labels exactly, using
+negative infinity internally. Alpha includes the current unary; beta excludes
+it. The restricted node and adjacent-pair formulas use the same finite scores
+and their own partition. Viterbi runs over surviving labels, sorted ascending;
+ties select the lowest predecessor and final label, not a globally
+lexicographic path. The score API still rejects nonfinite input potentials.
+Masks, rather than finite negative sentinels, define support.
+
+The fully connected score model means the number of allowed paths is exactly
+the product of per-position subset sizes, serialized as a decimal string. Any
+empty subset makes the event impossible. Its conditional distribution and
+gradient are undefined, so the JSON response has `possible=false`,
+`conditional=null`, `log_event_gradient=null`, `event_probability=0` and
+`log_event_probability=null` (representing extended-real negative infinity).
+A nonempty event can have a floating-point probability of zero by underflow;
+it instead has `possible=true`, a finite log probability and an explicit
+underflow flag. Forbidden entries in message/score tables are also null, never
+finite approximations to impossible scores. Tiny positive computed log-event
+probabilities from roundoff are clamped to zero.
+
+All-free masks recover the original inference. Fully singleton masks give one
+path, unit conditional mass and zero entropy up to roundoff. For a singleton
+restriction at one position, the event probability equals its unrestricted
+node marginal. Disjoint event probabilities add; nested events cannot increase
+probability. Entropy given a particular event can increase or decrease. These
+identities have independent path-enumeration and numerical controls.
+
+`label_event` evaluates the same eight observed features and returns the full
+39-dimensional expected-feature difference. For the independent fitted control,
+the last 15 sequence coordinates remain fixed; the displayed 39-vector is the
+derivative of the ambient chain score family at that control, not a statement
+that all coordinates were trained. No update, retraining or partial-label loss
+optimization is performed. In its actual factorized distribution, a restriction
+at one position leaves unrestricted positions' node marginals unchanged.
+
+New tests: nine Python tests and five Node/Chrome tests. Sixty Fraction and sixty
+separate BigInt allowed-path oracles, all 39 central finite differences,
+additivity/nesting, entropy-increase example, pointmass, all-free equality,
+long-score boundary, ties, invalid subsets, strict JSON, CLI and underflow checks.
+3,336 Python/JavaScript witnesses cover all six existing fitted models, each of
+16 test observation sequences, every position's three singleton restrictions
+(2,952 total), plus all-free, one-complete-path, multi-subset and impossible
+patterns (384 total). They compare probabilities, partitions, nodes, pairs,
+complete best paths, entropy and all 39 event derivatives. Existing model
+training and held-out scores remain unchanged. A separate 3,336-query actual
+Chrome replay checks displayed bars and provenance against that module, not
+against a new mathematical oracle. Both inspectors total 4,647 UI states/queries.
+Nine modules and seven commands also reproduce from the installed wheel.
+
+### Additional sources and narrower scope
+
+- Papay, Klinger and Padó, [Constraining Linear-chain CRFs to Regular Languages](https://arxiv.org/html/2106.07306v6), sections 2-5: explicitly conditions a CRF distribution on an output event and distinguishes constrained decoding from constrained training. This project implements only position-wise subsets, not its NFA construction, nonlocal regular-language constraints or training results. The paper's corrected-score notice is preserved at source; no experimental score is reused here.
+- [TorchCondiRF](https://github.com/MPKonst/torchcondirf), implementation README: restricted partitions and fixed-position label subsets are established functionality. No implementation is imported or copied; no top-k claim here.
+- [partial-crfsuite](https://github.com/Oneplus/partial-crfsuite), implementation README: ambiguous position-wise labels are used for partial-annotation training. This project does not perform that training, copy its code, inherit its NLP results or adopt its license.
+
+These supplement the seven-source v0.1 ledger above. Relevant sections were
+fetched and read on November 8, 2026. Restricting and renormalizing a fixed
+model's output is standard conditioning, not a new method, a causal
+intervention, a ground-truth correction or a model-quality improvement.
