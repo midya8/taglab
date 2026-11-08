@@ -6,6 +6,7 @@ from .normalization import comparison
 from .export import export
 from .conditioning import label_event
 from .sampling import sample,uniforms
+from .counts import label_count
 from .model import potentials
 
 
@@ -16,6 +17,7 @@ def main():
     q=sub.add_parser('audit');q.add_argument('--input')
     q=sub.add_parser('infer');q.add_argument('--symbols',required=True);q.add_argument('--family',choices=['chain','local'],default='chain')
     q=sub.add_parser('condition');q.add_argument('--symbols',required=True);q.add_argument('--allowed',required=True);q.add_argument('--family',choices=['chain','local'],default='chain')
+    q=sub.add_parser('count');q.add_argument('--symbols',required=True);q.add_argument('--label',type=int,required=True);q.add_argument('--count',type=int,required=True);q.add_argument('--family',choices=['chain','local'],default='chain')
     q=sub.add_parser('sample');q.add_argument('--symbols',required=True);q.add_argument('--allowed',required=True);q.add_argument('--seed',type=int,default=17);q.add_argument('--uniforms');q.add_argument('--mode',choices=['joint','independent'],default='joint');q.add_argument('--family',choices=['chain','local'],default='chain')
     q=sub.add_parser('export');q.add_argument('--output',required=True)
     args=p.parse_args()
@@ -27,6 +29,8 @@ def main():
             r=experiment();Path(args.output).write_text(json.dumps(r,sort_keys=True,allow_nan=False)+'\n');out=dict(output=args.output,selected=r['selected'])
         elif args.command=='audit':out=audit(json.loads(Path(args.input).read_text()) if args.input else saved())
         elif args.command=='export':out=dict(files=export(args.output))
+        elif args.command=='count':
+            x=json.loads(args.symbols);r=saved();m=next(m for m in r['models'] if m['id']==r['selected'][args.family]);out=dict(model_id=m['id'],symbols=x,inference=label_count(m['theta'],x,args.label,args.count))
         elif args.command=='sample':
             x=json.loads(args.symbols);r=saved();m=next(m for m in r['models'] if m['id']==r['selected'][args.family]);out=dict(model_id=m['id'],symbols=x,inference=sample(*potentials(m['theta'],x),json.loads(args.allowed),json.loads(args.uniforms) if args.uniforms else uniforms(args.seed,len(x)),args.mode))
         else:
