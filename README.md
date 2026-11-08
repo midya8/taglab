@@ -67,8 +67,8 @@ python -m pip install --target /tmp/taglab-installed /tmp/taglab-wheels/*.whl
 bash examples/verify_wheel.sh /tmp/taglab-installed "$PWD"
 ```
 
-The seven commands are `demo`, `train`, `audit`, `infer`, `export` and
-`normalization` and `condition`. Nine importable modules including the package root work outside
+The eight commands are `demo`, `train`, `audit`, `infer`, `export`,
+`normalization`, `condition` and `sample`. Ten importable modules including the package root work outside
 the checkout. No NumPy, PyTorch, autodiff, model API or external dataset is used.
 
 ```sh
@@ -127,7 +127,7 @@ never disguises a very negative finite score as an impossible transition.
 
 ## Independent checks
 
-**31 Python tests and 12 Node/real-Chrome tests** cover:
+**37 Python tests and 16 Node/real-Chrome tests** cover:
 
 - 60 exhaustive exact-integer path-potential systems with Fraction node/edge
   marginals, exact partition sums and maximum path weights; separate BigInt
@@ -143,7 +143,7 @@ never disguises a very negative finite score as an impossible transition.
   combinations. Edited observations, explicit transition controls, keyboard,
   invalid clearing, clipboard success/failure, actual Blob download and
   320/390/1280 responsive overflow and touch targets.
-- Nine-module/seven-command installed-wheel reproduction, six fresh fits, stored
+- Ten-module/eight-command installed-wheel reproduction, six fresh fits, stored
   and fresh audits, and four byte-exact archive/loader exports outside the checkout.
 
 The v0.2 checks add sixty independent Fraction path-event controls and sixty
@@ -171,3 +171,24 @@ forward/backward and Viterbi follow standard published theory; source links and
 notation differences are recorded in [METHOD.md](METHOD.md). The synthetic
 fixture, code and prose are original to this project under MIT. Referenced papers
 and library code are not redistributed or used as runtime dependencies.
+
+## Joint paths, not independent node draws (v0.3)
+
+The [event inspector](https://midya8.github.io/taglab/evidence.html#sampling) now traces backward-conditional path sampling under the same fixed model and allowed-label event. Start with the final node, then sample each predecessor given the already sampled successor. Every reverse conditional, supplied uniform, CDF bin and chosen label is visible. A paired independent-node draw uses the same uniforms but generally has a different full-path law, despite matching ideal node marginals. Exact pair total variation is computed separately from descriptive frequencies of 64 seeded draws.
+
+```python
+from taglab.sampling import prepare, draw, uniforms, sample
+# p = (emissions, transition, start, end), same finite-score API
+prepared = prepare(*p, allowed)
+witness = draw(prepared, uniforms(17, len(emissions)))
+control = draw(prepared, witness['uniforms'], mode='independent')
+```
+
+```sh
+python -m taglab sample --symbols '[0,1]' --allowed '[[0,1,2],[0,1,2]]' --seed 17
+python -m taglab sample --symbols '[0,1]' --allowed '[[0,1,2],[0,1,2]]' --uniforms '[0.2,0.7]' --mode independent
+```
+
+Six Python and four Node/Chrome tests add 60 exhaustive Fraction conditional-product controls (428 complete paths), 60 independent BigInt controls, 2,304 Python/JavaScript path traces and 384 new browser queries. The combined suites have 37 Python and 16 Node/Chrome tests, with 5,031 UI states/queries across the inspectors. Ten modules and eight commands reproduce from the installed wheel.
+
+This is finite-precision fixed-model sampling, not a new inference method, training, label correction, parameter uncertainty or quality improvement. Supplied uniforms must be in [0,1). The xorshift32 mid-bin stream is deterministic and portable, not certified independent entropy or cryptographic randomness. Underflowed probabilities and collapsed CDF bins are explicitly flagged. Model path log probability, ideal proposal log probability and numeric kernel log probability are separate. PRNG lattice frequencies need not equal continuous-uniform probabilities. Original fits, test scores and budget limits are unchanged.
