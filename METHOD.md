@@ -318,3 +318,28 @@ These supplement the seven-source v0.1 ledger above. Relevant sections were
 fetched and read on November 8, 2026. Restricting and renormalizing a fixed
 model's output is standard conditioning, not a new method, a causal
 intervention, a ground-truth correction or a model-quality improvement.
+
+
+## v0.3: backward conditional sampling
+
+Keep fixed observations, scores and a nonempty Cartesian label event. Let the restricted forward message include the current unary, as above. The final categorical weights are `exp(alpha[T-1,j] + end[j])`. After drawing label j at position t+1, the predecessor weights at t are `exp(alpha[t,i] + transition[i,j])`. Normalize each row in log space. Future terms, including the next unary, are constant given the successor and cancel. By the chain rule these reverse conditional probabilities multiply to the full conditional path probability. The independent-node control instead multiplies the smoothed one-position marginals, which generally does not equal the joint path law.
+
+An explicit two-label, two-position example uses zero unary/start/end scores and transition potentials `[[9,1],[1,9]]`. Both node marginals are `[1/2,1/2]`. The joint path weights are `[9,1,1,9]/20`, whereas independent nodes put `1/4` on each path. The pair total variation is 2/5. This is a fixed-score identity, not a learned-model advantage or a causal experiment.
+
+The low-level sample API accepts exactly one finite uniform in [0,1) per position, indexed in chronological order and consumed backwards. CDF selection uses the first positive bin whose upper endpoint strictly exceeds u; equality moves to the next positive bin. The last positive bin ends at one. Exact forbidden labels have zero weights. Finite probabilities can underflow, and even positive probabilities may have collapsed CDF bins due to roundoff. Both are listed in each trace. Log probabilities remain visible. No exact real-number sampling or guaranteed reachability of every mathematically positive path is claimed.
+
+`uniforms(seed,count)` uses xorshift32: XOR with left13, right17, left5, truncating to32 bits, then `(state+0.5)/2**32`. Nonzero integer seeds only. This portable deterministic lattice gives reproducible illustrations, not cryptographic or certified independent randomness. Fixed-stream frequencies are not confidence intervals or hypothesis tests. The browser displays64 draws and a selected reverse trace; manual uniforms produce one draw. Both algorithms receive the same uniforms as an explicit coupling, not independent study groups. Stored true labels are not read.
+
+The trace reports `model_path_log_probability` under the restricted model, `proposal_log_probability` as the ideal log-kernel product of the selected sampling method, and `numeric_kernel_log_probability` from normalized finite probabilities. None asserts that a deterministic PRNG has the continuous target distribution. Preparation is O(T K²); each draw is O(T K) after preparation. The browser reuses one prepared result for its64 draws. No speed benchmark or parameter-posterior sampling is claimed.
+
+Six Python tests cover60 independently enumerated Fraction fixtures and all428 supported paths via midpoint uniforms; independent path weights verify the reverse-product identity. Tests also cover exact CDF boundaries, singleton events, factorized agreement, correlated independent-node disagreement, underflow, collapsed CDF bins, long-score limits, strict invalids, CLI and input preservation. Four new Node/Chrome tests cover60 independently enumerated BigInt fixtures, 2,304 Python/JavaScript traces (six models,16 sequences,four events,three seeds,two laws),384 actual-browser queries, manual/seeded inputs, invalid and impossible-event clearing, keyboard focus, actual download, clipboard and320/390/1280 layouts. Browser tests compare rendered evidence to the separately oracle-checked module, not a third mathematical oracle.
+
+### Sampling sources
+
+- Marsaglia, [Xorshift RNGs](https://www.jstatsoft.org/article/view/v008i14/), Journal of Statistical Software8(14),2003, and [Xorshift RNGs for small systems](https://excamera.com/sphinx/article-xorshift.html): standard XOR/shift generator and13/17/5 coefficients. The mid-bin conversion here is explicitly specified. No statistical-quality claim is inherited.
+
+- Douc, Garivier, Moulines and Olsson, [On the Forward Filtering Backward Smoothing Particle Approximations of the Smoothing Distribution in General State Spaces Models](https://arxiv.org/pdf/0904.0316), section2, equations2-3: reverse-kernel factorization background. Only the finite-state kernel identity is used; no particle approximation, convergence theorem or particle implementation is claimed. Relevant sections, not the whole paper, were read.
+- MIT6.0411/16.420, [Sampling, Max-Product and Discrete HMMs](https://airr.mit.edu/_static/fall23/lectures/lec12/L12-Sampling-HMM.pdf): sampling and smoothing background. TagLab's conditional-label score model is not a generative HMM.
+- Murphy, [HMM toolbox usage](https://www.cs.ubc.ca/~murphyk/Software/HMM/hmm_usage.html): generative sampling, Viterbi and fitting are distinct operations. TagLab does not import the toolbox or sample observations.
+
+These supplement the conditioning and original theory sources above. Fetched November8,2026. Backward conditional sampling is standard theory; original code, tests and visual witnesses do not make it a new method.
