@@ -175,7 +175,7 @@ API and this exact restricted-support toy deliberately remain separate.
 
 ## Independent verification and transport
 
-22 Python and seven Node/real-Chrome tests cover 60 independently enumerated
+The original v0.1 suite of 22 Python and seven Node/real-Chrome tests covers 60 independently enumerated
 integer-potential systems each in Python Fraction and JavaScript BigInt, all 39
 finite differences, full feature moment enumeration, edge consistency, gauges,
 long log scores, ties, independent factorization, six fresh fits, all 327 state
