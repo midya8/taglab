@@ -5,3 +5,5 @@ python -m taglab normalization
 python -m taglab infer --symbols '[-2, 0, 2]' --family chain
 
 python -m taglab condition --symbols '[-2, 0, 2]' --allowed '[[2],[0,1,2],[0,1]]'
+
+python -m taglab sample --symbols '[0,1]' --allowed '[[0,1,2],[0,1,2]]' --seed 17
