@@ -67,8 +67,8 @@ python -m pip install --target /tmp/taglab-installed /tmp/taglab-wheels/*.whl
 bash examples/verify_wheel.sh /tmp/taglab-installed "$PWD"
 ```
 
-The eight commands are `demo`, `train`, `audit`, `infer`, `export`,
-`normalization`, `condition` and `sample`. Ten importable modules including the package root work outside
+The nine commands are `demo`, `train`, `audit`, `infer`, `export`,
+`normalization`, `condition`, `sample` and `count`. Eleven importable modules including the package root work outside
 the checkout. No NumPy, PyTorch, autodiff, model API or external dataset is used.
 
 ```sh
@@ -127,7 +127,7 @@ never disguises a very negative finite score as an impossible transition.
 
 ## Independent checks
 
-**37 Python tests and 16 Node/real-Chrome tests** cover:
+**43 Python tests and 20 Node/real-Chrome tests** cover:
 
 - 60 exhaustive exact-integer path-potential systems with Fraction node/edge
   marginals, exact partition sums and maximum path weights; separate BigInt
@@ -143,7 +143,7 @@ never disguises a very negative finite score as an impossible transition.
   combinations. Edited observations, explicit transition controls, keyboard,
   invalid clearing, clipboard success/failure, actual Blob download and
   320/390/1280 responsive overflow and touch targets.
-- Ten-module/eight-command installed-wheel reproduction, six fresh fits, stored
+- Eleven-module/nine-command installed-wheel reproduction, six fresh fits, stored
   and fresh audits, and four byte-exact archive/loader exports outside the checkout.
 
 The v0.2 checks add sixty independent Fraction path-event controls and sixty
@@ -192,3 +192,24 @@ python -m taglab sample --symbols '[0,1]' --allowed '[[0,1,2],[0,1,2]]' --unifor
 Six Python and four Node/Chrome tests add 60 exhaustive Fraction conditional-product controls (428 complete paths), 60 independent BigInt controls, 2,304 Python/JavaScript path traces and 384 new browser queries. The combined suites have 37 Python and 16 Node/Chrome tests, with 5,031 UI states/queries across the inspectors. Ten modules and eight commands reproduce from the installed wheel.
 
 This is finite-precision fixed-model sampling, not a new inference method, training, label correction, parameter uncertainty or quality improvement. Supplied uniforms must be in [0,1). The xorshift32 mid-bin stream is deterministic and portable, not certified independent entropy or cryptographic randomness. Underflowed probabilities and collapsed CDF bins are explicitly flagged. Model path log probability, ideal proposal log probability and numeric kernel log probability are separate. PRNG lattice frequencies need not equal continuous-uniform probabilities. Original fits, test scores and budget limits are unchanged.
+
+## Nonlocal occurrence-count events (v0.4)
+
+[Open the count inspector](https://midya8.github.io/taglab/counts.html). "Exactly r occurrences of A" cannot generally be written as a product of per-position label restrictions. A count-augmented dynamic program keeps the full original count distribution and reconstructs conditional node/pair probabilities, entropy, a complete best path and all 39 event derivatives. Prefix and strict-suffix log messages expose where the count lives. Counts mean positions, not runs or segments.
+
+```python
+from taglab.counts import count_event, label_count
+r = count_event(emissions, transition, start, end, label=0, count=2)
+# For a fitted 39-coordinate TagLab model:
+r = label_count(theta, symbols, label=0, count=2)
+```
+
+```sh
+python -m taglab count --symbols '[0,1,2]' --label 0 --count 1
+```
+
+A two-position control starts with independent fair labels, then conditions on exactly one A. AB and BA each receive 1/2, but independent draws from the conditioned node marginals also produce AA and BB. A correct expected count is not a guaranteed exact count. The inspector separately computes that independent-node count law.
+
+Six new Python and four Node/Chrome tests add 60 exhaustive Fraction fixtures and 60 BigInt fixtures, each testing every label and count (600 event queries per oracle), all 39 finite-difference derivatives, 864 Python/JavaScript numerical witnesses and 864 actual browser queries. Totals: 43 Python and 20 Node/Chrome tests, 5,895 UI states/queries, eleven installed modules and nine commands. Cross-language tied best-path/marginal representatives can differ at roundoff; constraints and attained scores are checked separately from identity.
+
+The limit is 64 positions and finite scores up to the existing magnitude bound. Full count inference uses O(T² K²) time and O(T² K) stored messages. This is standard state augmentation at fixed fitted scores, not a new model, causal intervention, partial-label training or accuracy gain. Original metrics and fit budgets remain unchanged. Binary64 arithmetic can underflow probability while preserving log probability. Under the independent control, the last 15 displayed event derivatives remain ambient chain coordinates, not trainable control weights.
