@@ -26,6 +26,35 @@ that score differently on test but were not selected by it.
 [Interactive sequence and gradient inspector](https://midya8.github.io/taglab/) ·
 [Equations, sources and limits](METHOD.md)
 
+## v0.2: a label is an event
+
+[Live label-event inspector](https://midya8.github.io/taglab/evidence.html)
+conditions the same fitted model on position-wise allowed label subsets. It
+computes the restricted partition, event log probability, conditional node/pair
+marginals, complete best path, entropy and all 39 derivatives of log P(event | x).
+Unrestricted and conditional bars stay side by side. Enter arbitrary subsets,
+keep one complete path, allow every path or make an exactly impossible event.
+
+This is hypothetical conditioning, not annotation correction, a causal
+intervention, partial-label training or a refit. Parameters stay fixed; original
+true labels are not displayed in this inspector. Finite log probabilities survive
+probability underflow. Zero support returns no conditional distribution or
+gradient, rather than NaNs or a made-up finite penalty. Conditional entropy can
+increase. Only position-wise subsets are supported, not general regular languages.
+
+```sh
+python -m taglab condition --symbols '[-2, 0, 2]' --allowed '[[2],[0,1,2],[0,1]]'
+python -m taglab condition --symbols '[0,1]' --allowed '[[],[0,1,2]]'
+```
+
+The core `taglab.conditioning.condition` accepts finite score arrays with two to
+eight labels and up to 256 positions. `label_event` adds the fitted three-label
+feature-gradient calculation. Forbidden entries in message tables are `null`,
+meaning negative infinity, not score zero. An impossible event uses `null` for
+log probability (extended-real log 0) and has `possible=false`, probability zero
+and `conditional=null`. Possible events whose probability underflows instead
+have a finite log probability and `probability_underflow=true`.
+
 ## Reproduce it
 
 ```sh
@@ -38,8 +67,8 @@ python -m pip install --target /tmp/taglab-installed /tmp/taglab-wheels/*.whl
 bash examples/verify_wheel.sh /tmp/taglab-installed "$PWD"
 ```
 
-The six commands are `demo`, `train`, `audit`, `infer`, `export` and
-`normalization`. Eight importable modules including the package root work outside
+The seven commands are `demo`, `train`, `audit`, `infer`, `export` and
+`normalization` and `condition`. Nine importable modules including the package root work outside
 the checkout. No NumPy, PyTorch, autodiff, model API or external dataset is used.
 
 ```sh
@@ -98,7 +127,7 @@ never disguises a very negative finite score as an impossible transition.
 
 ## Independent checks
 
-**22 Python tests and seven Node/real-Chrome tests** cover:
+**31 Python tests and 12 Node/real-Chrome tests** cover:
 
 - 60 exhaustive exact-integer path-potential systems with Fraction node/edge
   marginals, exact partition sums and maximum path weights; separate BigInt
@@ -114,8 +143,23 @@ never disguises a very negative finite score as an impossible transition.
   combinations. Edited observations, explicit transition controls, keyboard,
   invalid clearing, clipboard success/failure, actual Blob download and
   320/390/1280 responsive overflow and touch targets.
-- Eight-module/six-command installed-wheel reproduction, six fresh fits, stored
+- Nine-module/seven-command installed-wheel reproduction, six fresh fits, stored
   and fresh audits, and four byte-exact archive/loader exports outside the checkout.
+
+The v0.2 checks add sixty independent Fraction path-event controls and sixty
+independent JavaScript BigInt controls, all 39 event-gradient finite differences,
+event additivity/nesting, a conditional-entropy increase, strict JSON, long
+extreme scores, point masses, impossible events and probability underflow.
+**3,336 Python/JavaScript event witnesses** cover all six fitted models and all
+16 test observation sequences: 2,952 single-position label restrictions plus
+384 all-free, one-path, subset and impossible events. The 3,336 browser queries
+are a separate UI replay, with bars checked against its independently verified
+module; they are not 3,336 independent mathematical oracles. Together with the
+original 1,311 browser states, both pages exercise 4,647 states/queries. Browser
+checks also cover editing, keyboard, invalid clearing, clipboard, real Blob
+downloads and responsive layouts. For the independent control the displayed
+39-vector is the ambient-chain derivative, including its 15 fixed-zero sequence
+coordinates, not 39 trainable control parameters.
 
 ## Scope and attribution
 
