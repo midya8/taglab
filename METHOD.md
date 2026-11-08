@@ -343,3 +343,32 @@ Six Python tests cover60 independently enumerated Fraction fixtures and all428 s
 - Murphy, [HMM toolbox usage](https://www.cs.ubc.ca/~murphyk/Software/HMM/hmm_usage.html): generative sampling, Viterbi and fitting are distinct operations. TagLab does not import the toolbox or sample observations.
 
 These supplement the conditioning and original theory sources above. Fetched November8,2026. Backward conditional sampling is standard theory; original code, tests and visual witnesses do not make it a new method.
+
+
+## v0.4: occurrence-count state augmentation
+
+Choose one label h and define C(y) = sum_t 1[y_t = h]. The event is C(y) = r. Unlike Cartesian position subsets, this couples distant positions. Scores and fitted parameters remain fixed. Counts refer to occurrences at positions, not segments or transitions.
+
+Let F[t,c,j] include the score through position t, ending at j with c occurrences. Initialize F[0,1[j=h],j] = start[j] + unary[0,j], with every other cell at exact negative infinity. Then
+
+`F[t,c,j] = unary[t,j] + logsumexp_i(F[t-1,c-1[j=h],i] + A[i,j])`.
+
+The log partition for each count c is `Z_c = logsumexp_j(F[T-1,c,j] + end[j])`. The count law is exp(Z_c - Z), where Z is the original unrestricted log partition. Summing over all counts recovers the original model, up to numerical roundoff. Nonempty fully connected finite-score chains with at least two labels support every count 0 through T. The exact support size is binomial(T,r) times (K-1)^(T-r).
+
+Let B[t,q,i] include the score strictly after t and the end score, conditional on current label i and exactly q future occurrences. Initialize B[T-1,0,i] = end[i]. The recurrence sums `A[i,j] + unary[t+1,j] + B[t+1,q-1[j=h],j]` over j. A selected-event node numerator sums `F[t,c,j] + B[t,r-c,j]` over c in log space. An edge numerator sums `F[t,c,i] + A[i,j] + unary[t+1,j] + B[t+1,r-c-1[j=h],j]`. Normalize by Z_r. Expected complete scores give entropy; expected feature differences give the same ambient 39-coordinate event derivative used for Cartesian events.
+
+Max-sum on the same augmented states gives the constrained best path. Exact numerical ties choose the lowest predecessor, then lowest final label. This is not a global lexicographic rule. Near-ties can resolve differently between scalar Python and JavaScript as their computed potentials round differently. Cross-language tests compare constraints, attained path scores and marginal-mode values, while independent integer oracles verify optimal path weight. No epsilon tie-breaking changes the optimizer's stated objective.
+
+Full forward/suffix/max tables cost O(T² K²) time and O(T² K) storage. The public API refuses more than 64 positions, invalid count/label integers, booleans and invalid existing finite-score inputs. Null means exact unsupported count state in strict JSON. Finite log event probabilities survive ordinary-probability underflow. The code does not claim exact real arithmetic, scalable long-document inference, multi-label simultaneous count vectors or arbitrary automaton constraints.
+
+The independent-node control convolves Bernoulli polynomials using the conditioned marginal probability of the counted label at each position. This Poisson-binomial distribution generally has mass outside r, even though its expectation equals r. A two-position fair independent model conditioned on exactly one A has only AB and BA with probability 1/2 each; independent draws from its node marginals put 1/4 on all four paths. This is an event-conditioning identity, not a trained-model comparison or causal mechanism test.
+
+### Count-event checks and source scope
+
+Six Python tests include 60 exact-integer potential systems enumerated with Fraction references, every label and every count (600 event queries), complete node/edge laws, entropy, support, optimal path weight, count-partition recomposition, prefix/suffix matching, all 39 finite differences, exact ties, strict inputs, single positions, probability underflow at log -2000, 64 positions at the score bound and CLI. Three scalar Node tests add a separate 60-fixture BigInt path oracle and 864 cross-language numerical witnesses (six models, sixteen sequences, three counted labels and three counts). One actual-Chrome test adds 864 rendered queries plus count selection, edited inputs, stale clearing, keyboard, clipboard, actual Blob download and 320/390/1280 layout checks. The combined project has 43 Python and 20 Node/Chrome tests and 5,895 UI states/queries. Eleven modules and nine commands reproduce from an installed wheel.
+
+- Titsias, Holmes and Yau, [Statistical Inference in Hidden Markov Models Using k-Segment Constraints](https://pmc.ncbi.nlm.nih.gov/articles/PMC4867884/), JASA 111(513), 2016. Read the introduction, counting-chain augmentation/recursions and generalizations. Their main statistic counts segments; TagLab counts positions containing one label. The shared idea is deterministic auxiliary-state augmentation. No novelty, HMM fit, biomedical result or paper implementation is inherited. Only relevant sections, not the entire article, were read.
+- Christiansen and colleagues, [Inference with Constrained Hidden Markov Models](https://arxiv.org/pdf/1007.5421), 2010, introduction and sections 3.3 and 4 cardinality examples: state-visit cardinality constraints are established. TagLab does not implement PRISM, constraint logic programming or the paper's pair-alignment experiments.
+- Collins, [The Forward-Backward Algorithm](https://www.cs.columbia.edu/~mcollins/fb.pdf), generic chain-potential recursions. The original project's ledger already covers this source. State augmentation retains that same factorization on an enlarged state space.
+
+Sources fetched November 8, 2026. Original code, tests, fixture and visual witnesses remain MIT; referenced papers are not redistributed. The original synthetic models, split, fit parameters, held-out metrics and budget-exhaustion warnings are unchanged.
