@@ -1,11 +1,19 @@
 # TagLab
 
-Linear-chain conditional random fields from scratch: manual log-space inference,
-expected-minus-observed likelihood gradients, complete optimization replay,
-exact rational path controls and an editable scalar-JavaScript inspector.
-Dependency-free Python 3.10+. Standard CRF theory, not a new method.
+TagLab fits small linear-chain conditional random fields and lets you inspect
+every likelihood gradient, optimization step, sequence probability and message.
+It uses dependency-free Python 3.10+ and a separate scalar-JavaScript browser
+implementation. The models use original synthetic sequences, not real text.
+The methods are standard CRF theory, not new algorithms.
 
-## The control is allowed to win
+## Choose a calculation
+
+- [Training and sequence inference](https://midya8.github.io/taglab/): compare the fitted chain with its same-feature independent-label control.
+- [Allowed-label events](https://midya8.github.io/taglab/evidence.html): restrict labels at individual positions without refitting.
+- [Joint path sampling](https://midya8.github.io/taglab/evidence.html#sampling): follow backward conditionals rather than draw each node independently.
+- [Occurrence counts](https://midya8.github.io/taglab/counts.html): condition on a count that couples positions.
+
+## Fit a model and inspect the result
 
 The validation-selected chain has lower test conditional NLL, but makes **more
 Viterbi token errors** than the separately trained independent-label control.
@@ -26,7 +34,7 @@ that score differently on test but were not selected by it.
 [Interactive sequence and gradient inspector](https://midya8.github.io/taglab/) ·
 [Equations, sources and limits](METHOD.md)
 
-## v0.2: a label is an event
+## Condition on allowed labels
 
 [Live label-event inspector](https://midya8.github.io/taglab/evidence.html)
 conditions the same fitted model on position-wise allowed label subsets. It
@@ -54,6 +62,48 @@ meaning negative infinity, not score zero. An impossible event uses `null` for
 log probability (extended-real log 0) and has `possible=false`, probability zero
 and `conditional=null`. Possible events whose probability underflows instead
 have a finite log probability and `probability_underflow=true`.
+
+## Sample a joint path
+
+The [event inspector](https://midya8.github.io/taglab/evidence.html#sampling) traces backward-conditional path sampling under the same fixed model and allowed-label event. Start with the final node, then sample each predecessor given the already sampled successor. Every reverse conditional, supplied uniform, CDF bin and chosen label is visible. A paired independent-node draw uses the same uniforms but generally has a different full-path law, despite matching ideal node marginals. Exact pair total variation is computed separately from descriptive frequencies of 64 seeded draws.
+
+```python
+from taglab.sampling import prepare, draw, uniforms, sample
+# p = (emissions, transition, start, end), same finite-score API
+prepared = prepare(*p, allowed)
+witness = draw(prepared, uniforms(17, len(emissions)))
+control = draw(prepared, witness['uniforms'], mode='independent')
+```
+
+```sh
+python -m taglab sample --symbols '[0,1]' --allowed '[[0,1,2],[0,1,2]]' --seed 17
+python -m taglab sample --symbols '[0,1]' --allowed '[[0,1,2],[0,1,2]]' --uniforms '[0.2,0.7]' --mode independent
+```
+
+Six Python and four Node/Chrome tests add 60 exhaustive Fraction conditional-product controls (428 complete paths), 60 independent BigInt controls, 2,304 Python/JavaScript path traces and 384 new browser queries. Those sampling checks add to the current totals in the occurrence-count section below.
+
+This is finite-precision fixed-model sampling, not a new inference method, training, label correction, parameter uncertainty or quality improvement. Supplied uniforms must be in [0,1). The xorshift32 mid-bin stream is deterministic and portable, not certified independent entropy or cryptographic randomness. Underflowed probabilities and collapsed CDF bins are explicitly flagged. Model path log probability, ideal proposal log probability and numeric kernel log probability are separate. PRNG lattice frequencies need not equal continuous-uniform probabilities. Original fits, test scores and budget limits are unchanged.
+
+## Condition on an occurrence count
+
+[Open the count inspector](https://midya8.github.io/taglab/counts.html). "Exactly r occurrences of A" cannot generally be written as a product of per-position label restrictions. A count-augmented dynamic program keeps the full original count distribution and reconstructs conditional node/pair probabilities, entropy, a complete best path and all 39 event derivatives. Prefix and strict-suffix log messages expose where the count lives. Counts mean positions, not runs or segments.
+
+```python
+from taglab.counts import count_event, label_count
+r = count_event(emissions, transition, start, end, label=0, count=2)
+# For a fitted 39-coordinate TagLab model:
+r = label_count(theta, symbols, label=0, count=2)
+```
+
+```sh
+python -m taglab count --symbols '[0,1,2]' --label 0 --count 1
+```
+
+A two-position control starts with independent fair labels, then conditions on exactly one A. AB and BA each receive 1/2, but independent draws from the conditioned node marginals also produce AA and BB. A correct expected count is not a guaranteed exact count. The inspector separately computes that independent-node count law.
+
+Six new Python and four Node/Chrome tests add 60 exhaustive Fraction fixtures and 60 BigInt fixtures, each testing every label and count (600 event queries per oracle), all 39 finite-difference derivatives, 864 Python/JavaScript numerical witnesses and 864 actual browser queries. Totals: 43 Python and 20 Node/Chrome tests, 5,895 UI states/queries, eleven installed modules and nine commands. Cross-language tied best-path/marginal representatives can differ at roundoff; constraints and attained scores are checked separately from identity.
+
+The limit is 64 positions and finite scores up to the existing magnitude bound. Full count inference uses O(T² K²) time and O(T² K) stored messages. This is standard state augmentation at fixed fitted scores, not a new model, causal intervention, partial-label training or accuracy gain. Original metrics and fit budgets remain unchanged. Binary64 arithmetic can underflow probability while preserving log probability. Under the independent control, the last 15 displayed event derivatives remain ambient chain coordinates, not trainable control weights.
 
 ## Reproduce it
 
@@ -146,7 +196,7 @@ never disguises a very negative finite score as an impossible transition.
 - Eleven-module/nine-command installed-wheel reproduction, six fresh fits, stored
   and fresh audits, and four byte-exact archive/loader exports outside the checkout.
 
-The v0.2 checks add sixty independent Fraction path-event controls and sixty
+The label-event checks include sixty independent Fraction path-event controls and sixty
 independent JavaScript BigInt controls, all 39 event-gradient finite differences,
 event additivity/nesting, a conditional-entropy increase, strict JSON, long
 extreme scores, point masses, impossible events and probability underflow.
@@ -171,45 +221,3 @@ forward/backward and Viterbi follow standard published theory; source links and
 notation differences are recorded in [METHOD.md](METHOD.md). The synthetic
 fixture, code and prose are original to this project under MIT. Referenced papers
 and library code are not redistributed or used as runtime dependencies.
-
-## Joint paths, not independent node draws (v0.3)
-
-The [event inspector](https://midya8.github.io/taglab/evidence.html#sampling) now traces backward-conditional path sampling under the same fixed model and allowed-label event. Start with the final node, then sample each predecessor given the already sampled successor. Every reverse conditional, supplied uniform, CDF bin and chosen label is visible. A paired independent-node draw uses the same uniforms but generally has a different full-path law, despite matching ideal node marginals. Exact pair total variation is computed separately from descriptive frequencies of 64 seeded draws.
-
-```python
-from taglab.sampling import prepare, draw, uniforms, sample
-# p = (emissions, transition, start, end), same finite-score API
-prepared = prepare(*p, allowed)
-witness = draw(prepared, uniforms(17, len(emissions)))
-control = draw(prepared, witness['uniforms'], mode='independent')
-```
-
-```sh
-python -m taglab sample --symbols '[0,1]' --allowed '[[0,1,2],[0,1,2]]' --seed 17
-python -m taglab sample --symbols '[0,1]' --allowed '[[0,1,2],[0,1,2]]' --uniforms '[0.2,0.7]' --mode independent
-```
-
-Six Python and four Node/Chrome tests add 60 exhaustive Fraction conditional-product controls (428 complete paths), 60 independent BigInt controls, 2,304 Python/JavaScript path traces and 384 new browser queries. The combined suites have 37 Python and 16 Node/Chrome tests, with 5,031 UI states/queries across the inspectors. Ten modules and eight commands reproduce from the installed wheel.
-
-This is finite-precision fixed-model sampling, not a new inference method, training, label correction, parameter uncertainty or quality improvement. Supplied uniforms must be in [0,1). The xorshift32 mid-bin stream is deterministic and portable, not certified independent entropy or cryptographic randomness. Underflowed probabilities and collapsed CDF bins are explicitly flagged. Model path log probability, ideal proposal log probability and numeric kernel log probability are separate. PRNG lattice frequencies need not equal continuous-uniform probabilities. Original fits, test scores and budget limits are unchanged.
-
-## Nonlocal occurrence-count events (v0.4)
-
-[Open the count inspector](https://midya8.github.io/taglab/counts.html). "Exactly r occurrences of A" cannot generally be written as a product of per-position label restrictions. A count-augmented dynamic program keeps the full original count distribution and reconstructs conditional node/pair probabilities, entropy, a complete best path and all 39 event derivatives. Prefix and strict-suffix log messages expose where the count lives. Counts mean positions, not runs or segments.
-
-```python
-from taglab.counts import count_event, label_count
-r = count_event(emissions, transition, start, end, label=0, count=2)
-# For a fitted 39-coordinate TagLab model:
-r = label_count(theta, symbols, label=0, count=2)
-```
-
-```sh
-python -m taglab count --symbols '[0,1,2]' --label 0 --count 1
-```
-
-A two-position control starts with independent fair labels, then conditions on exactly one A. AB and BA each receive 1/2, but independent draws from the conditioned node marginals also produce AA and BB. A correct expected count is not a guaranteed exact count. The inspector separately computes that independent-node count law.
-
-Six new Python and four Node/Chrome tests add 60 exhaustive Fraction fixtures and 60 BigInt fixtures, each testing every label and count (600 event queries per oracle), all 39 finite-difference derivatives, 864 Python/JavaScript numerical witnesses and 864 actual browser queries. Totals: 43 Python and 20 Node/Chrome tests, 5,895 UI states/queries, eleven installed modules and nine commands. Cross-language tied best-path/marginal representatives can differ at roundoff; constraints and attained scores are checked separately from identity.
-
-The limit is 64 positions and finite scores up to the existing magnitude bound. Full count inference uses O(T² K²) time and O(T² K) stored messages. This is standard state augmentation at fixed fitted scores, not a new model, causal intervention, partial-label training or accuracy gain. Original metrics and fit budgets remain unchanged. Binary64 arithmetic can underflow probability while preserving log probability. Under the independent control, the last 15 displayed event derivatives remain ambient chain coordinates, not trainable control weights.
